@@ -1,0 +1,21 @@
+CC = clang++-13
+CFLAGS = -std=c++17 -O2
+LDFLAGS = -lGL -lGLEW -lglfw -lm
+
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+	CXXFLAGS += -DDEBUG -g
+else
+	CXXFLAGS += -DNDEBUG
+endif
+
+FirstTriangle_01: FirstTriangle_01.cpp
+	$(CC) $(CFLAGS) -o FirstTriangle_01 main.cpp FirstTriangle_01.cpp $(LDFLAGS)
+
+.PHONY: test clean
+
+test: FirstTriangle_01
+	./FirstTriangle_01
+
+clean:
+	rm FirstTriangle_01

@@ -1,0 +1,185 @@
+#include "FirstTriangle.h"
+
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <fstream>
+
+/*------------------------------------------------------------------*/
+// Constants
+/*------------------------------------------------------------------*/
+const uint32_t WIDTH = 600;
+const uint32_t HEIGHT = 800;
+const char * TITLE = "First Triangle";
+
+/*------------------------------------------------------------------*/
+// Static Function Definition
+/*------------------------------------------------------------------*/
+
+static void
+initWindow(GLFWwindow * &window) {
+    // create window
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    window = glfwCreateWindow(
+                        WIDTH,
+                        HEIGHT,
+                        TITLE,
+                        nullptr,
+                        nullptr);
+
+    if(!window) {
+        throw std::runtime_error("failed to create window");
+    }
+
+    // make window current
+    glfwMakeContextCurrent(window);
+}
+
+/*------------------------------------------------------------------*/
+
+static std::string
+readFile(const std::string &filename) {
+    std::ifstream file(filename, std::ios::in);
+
+    // check if the file can be opened
+    if(!file.is_open()) {
+        throw std::runtime_error("failed to open shader file.!!!");
+    }
+
+    std::string buffer;
+    std::string line;
+
+    while(!file.eof()) {
+        std::getline(file, line);
+        buffer.append(line + "\n");
+    }
+
+    // close the file
+    file.close();
+
+    return buffer;
+}
+
+/*------------------------------------------------------------------*/
+
+static void
+initializeVBO(GLuint &vbo) {
+
+    // define vertices
+    GLfloat points[] {
+            0.0f,  0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+           -0.5f, -0.5f, 0.0f
+            };
+
+    // define vertex buffer object
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), points, GL_STATIC_DRAW);
+}
+
+/*------------------------------------------------------------------*/
+
+static void
+initializeVAO(GLuint &vao, GLuint &vbo) {
+    // define vertex attribute object
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+}
+
+/*------------------------------------------------------------------*/
+
+static void
+setupShaders(GLuint &shaderProgram) {
+    // define vertex shader
+    auto vertexShaderStr = readFile("shaders/shader.vert");
+    auto fragmentShaderStr = readFile("shaders/shader.frag");
+
+    auto  vertexShader = reinterpret_cast<const char *>(vertexShaderStr.c_str());
+    auto fragmentShader = reinterpret_cast<const char *>(fragmentShaderStr.c_str());
+
+    // compile shaders
+    GLuint vertShader= glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertShader, 1, &vertexShader, NULL);
+    glCompileShader(vertShader);
+
+    GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragShader, 1, &fragmentShader, NULL);
+    glCompileShader(fragShader);
+
+    // attach shaders
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, fragShader);
+    glAttachShader(shaderProgram, vertShader);
+    glLinkProgram(shaderProgram);
+}
+
+/*------------------------------------------------------------------*/
+// Private Function Definition
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::initOpenGL() {
+    // initialize GLFW library
+    if(!glfwInit()) {
+        std::cerr << "failed to initialize GLFW library" << std::endl;
+        exit(1);
+    }
+
+    //initialize window
+    initWindow(window);
+
+    // setup glew
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+    // tell GL only to draw pixels closer to the viewer
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);   // smaller depth value means closer
+
+    initializeVBO(vbo);
+    initializeVAO(vao, vbo);
+    setupShaders(shaderProgram);
+}
+
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::mainLoop() {
+    while(!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glUseProgram(shaderProgram);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glfwPollEvents();
+        glfwSwapBuffers(window);
+    }
+}
+
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::cleanup() {
+    glfwTerminate();
+}
+
+/*------------------------------------------------------------------*/
+// Public Class Function Definition
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::run() {
+    initOpenGL();
+    mainLoop();
+    cleanup();
+}
+
+/*------------------------------------------------------------------*/
