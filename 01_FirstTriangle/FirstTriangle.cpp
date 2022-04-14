@@ -1,30 +1,26 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "FirstTriangle.h"
 
 #include <iostream>
+#include <stdexcept>
 
 /*------------------------------------------------------------------*/
 // Constants
+/*------------------------------------------------------------------*/
 const uint32_t WIDTH = 600;
 const uint32_t HEIGHT = 800;
 const char * TITLE = "First Triangle";
 
 /*------------------------------------------------------------------*/
+// Static Function Definition
+/*------------------------------------------------------------------*/
 
-int main() {
-    // initialize GLFW library
-    if(!glfwInit()) {
-        std::cerr << "failed to initialize GLFW library" << std::endl;
-        exit(1);
-    }
-
+static void
+initWindow(GLFWwindow * &window) {
     // create window
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow *window = nullptr;
 
     window = glfwCreateWindow(
                         WIDTH,
@@ -34,21 +30,16 @@ int main() {
                         nullptr);
 
     if(!window) {
-        std::cerr << "failed to create window" << std::endl;
-        glfwTerminate();
-        exit(1);
+        throw std::runtime_error("failed to create window");
     }
 
     // make window current
     glfwMakeContextCurrent(window);
+}
 
-    // setup glew
-    glewExperimental = GL_TRUE;
-    glewInit();
-
-    // tell GL only to draw pixels closer to the viewer
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);   // smaller depth value means closer
+/*------------------------------------------------------------------*/
+static void
+initializeVBO(GLuint &vbo) {
 
     // define vertices
     GLfloat points[] {
@@ -58,20 +49,28 @@ int main() {
             };
 
     // define vertex buffer object
-    GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), points, GL_STATIC_DRAW);
+}
 
+/*------------------------------------------------------------------*/
 
+static void
+initializeVAO(GLuint &vao, GLuint &vbo) {
     // define vertex attribute object
-    GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
+}
+
+/*------------------------------------------------------------------*/
+
+static void
+setupShaders(GLuint &shaderProgram) {
     // define vertex shader
     const char * vertexShader =
         "#version 410 \n"
@@ -98,12 +97,44 @@ int main() {
     glCompileShader(fragShader);
 
     // attach shaders
-    GLuint shaderProgram = glCreateProgram();
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, fragShader);
     glAttachShader(shaderProgram, vertShader);
     glLinkProgram(shaderProgram);
+}
 
-    // main loop
+/*------------------------------------------------------------------*/
+// Private Function Definition
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::initOpenGL() {
+    // initialize GLFW library
+    if(!glfwInit()) {
+        std::cerr << "failed to initialize GLFW library" << std::endl;
+        exit(1);
+    }
+
+    //initialize window
+    initWindow(window);
+
+    // setup glew
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+    // tell GL only to draw pixels closer to the viewer
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);   // smaller depth value means closer
+
+    initializeVBO(vbo);
+    initializeVAO(vao, vbo);
+    setupShaders(shaderProgram);
+}
+
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::mainLoop() {
     while(!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shaderProgram);
@@ -112,8 +143,24 @@ int main() {
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
-
-    // clse GL contexts and other GLFW resources
-    glfwTerminate();
-    return 0;
 }
+
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::cleanup() {
+    glfwTerminate();
+}
+
+/*------------------------------------------------------------------*/
+// Public Class Function Definition
+/*------------------------------------------------------------------*/
+
+void
+FirstTriangle::run() {
+    initOpenGL();
+    mainLoop();
+    cleanup();
+}
+
+/*------------------------------------------------------------------*/

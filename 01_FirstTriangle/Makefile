@@ -10,7 +10,7 @@ else
 endif
 
 FirstTriangle: FirstTriangle.cpp
-	$(CC) $(CFLAGS) -o FirstTriangle FirstTriangle.cpp $(LDFLAGS)
+	$(CC) $(CFLAGS) -o FirstTriangle main.cpp FirstTriangle.cpp $(LDFLAGS)
 
 .PHONY: test clean
 
