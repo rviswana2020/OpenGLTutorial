@@ -9,13 +9,13 @@ else
 	CXXFLAGS += -DNDEBUG
 endif
 
-FirstTriangle: FirstTriangle.cpp
-	$(CC) $(CXXFLAGS) -o FirstTriangle main.cpp FirstTriangle.cpp $(LDFLAGS)
+FirstTriangle_02: FirstTriangle_02.cpp
+	$(CC) $(CXXFLAGS) -o FirstTriangle_02 main.cpp FirstTriangle_02.cpp $(LDFLAGS)
 
 .PHONY: test clean
 
-test: FirstTriangle
-	./FirstTriangle
+test: FirstTriangle_02
+	./FirstTriangle_02
 
 clean:
-	rm FirstTriangle
+	rm FirstTriangle_02
