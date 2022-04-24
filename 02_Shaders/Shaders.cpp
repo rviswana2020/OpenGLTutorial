@@ -196,28 +196,63 @@ initializeVAO(GLuint &vao, GLuint &vbo) {
 /*------------------------------------------------------------------*/
 
 static void
-setupShaders(GLuint &shaderProgram) {
-    // define vertex shader
-    auto vertexShaderStr = readFile("shaders/shader.vert");
-    auto fragmentShaderStr = readFile("shaders/shader.frag");
+printShaderInfoLog(GLuint shaderIdx) {
+    int maxLength = 2048;
+    int actualLength = 0;
 
-    auto  vertexShader = reinterpret_cast<const char *>(vertexShaderStr.c_str());
-    auto fragmentShader = reinterpret_cast<const char *>(fragmentShaderStr.c_str());
+    char log[2048];
+    glGetShaderInfoLog(shaderIdx, maxLength, &actualLength, log);
+    std::cout << "Shader info log for GL index: " << shaderIdx << std::endl;
+    std::cout << "Shader log: " <<  log << std::endl;
+}
+
+/*------------------------------------------------------------------*/
+
+static GLuint
+createShader(const char *shaderFile, int shaderType) {
+    auto shaderStr = readFile(shaderFile);
+    auto  shaderCode = reinterpret_cast<const char *>(shaderStr.c_str());
 
     // compile shaders
-    GLuint vertShader= glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertShader, 1, &vertexShader, NULL);
-    glCompileShader(vertShader);
+    GLuint shaderIdx= glCreateShader(shaderType);
+    glShaderSource(shaderIdx, 1, &shaderCode, NULL);
+    glCompileShader(shaderIdx);
 
-    GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader, 1, &fragmentShader, NULL);
-    glCompileShader(fragShader);
+    // check for compiler erros
+    int params = -1;
+    glGetShaderiv(shaderIdx, GL_COMPILE_STATUS, &params);
+    if(GL_TRUE != params) {
+        fprintf(stderr, "ERROR: GL Shader index %i did not compile\n",
+                shaderIdx);
+        printShaderInfoLog(shaderIdx);
+        exit(1);
+    }
+
+    return shaderIdx;
+}
+
+/*------------------------------------------------------------------*/
+
+static void
+setupShaders(GLuint &shaderProgram) {
+   GLuint vertShaderIdx = createShader("shaders/shader.vert", GL_VERTEX_SHADER);
+   GLuint fragShaderIdx = createShader("shaders/shader.frag", GL_FRAGMENT_SHADER);
 
     // attach shaders
     shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, fragShader);
-    glAttachShader(shaderProgram, vertShader);
+    glAttachShader(shaderProgram, fragShaderIdx);
+    glAttachShader(shaderProgram, vertShaderIdx);
     glLinkProgram(shaderProgram);
+
+    // check for compiler erros
+    int params = -1;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &params);
+    if(GL_TRUE != params) {
+        fprintf(stderr, "ERROR: GL  %i did not link\n",
+                shaderProgram);
+        printShaderInfoLog(shaderProgram);
+        exit(1);
+    }
 }
 
 /*------------------------------------------------------------------*/
